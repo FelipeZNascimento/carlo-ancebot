@@ -62,7 +62,7 @@ bot.command("jacomecou", async (ctx) => {
   const minutes = Math.floor((diff % 3600) / 60);
   const seconds = diff % 60;
 
-  await ctx.reply(`⏳ Ainda não! Faltam *${days}d ${hours}h ${minutes}m ${seconds}s* para a Copa começar!` + siteLink, {
+  await ctx.reply(`⏳ Ainda não! Faltam *${days}d ${hours}h ${minutes}m ${seconds}s* pra Copa começar!` + siteLink, {
     parse_mode: "Markdown",
   });
 });
