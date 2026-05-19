@@ -1,0 +1,28 @@
+{
+  "type": "module",
+  "name": "carlo-ancebot",
+  "version": "1.0.0",
+  "description": "A Telegram bot for Bolão Copa 2026",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "start": "node dist/bot.js",
+    "start:prod": "pm2 start bot.js --name carlo-ancebot --node-args=\"--env-file=.env.production\" --restart-delay=5000 --max-restarts=10",
+    "dev": "tsx --watch --env-file=.env.development bot.ts",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^25.8.0",
+    "@typescript-eslint/eslint-plugin": "^8.41.0",
+    "@typescript-eslint/parser": "^8.41.0",
+    "eslint": "^9.34.0",
+    "eslint-plugin-perfectionist": "^5.9.0",
+    "tsx": "^4.22.1",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "grammy": "^1.43.0",
+    "prettier": "^3.8.3"
+  }
+}
