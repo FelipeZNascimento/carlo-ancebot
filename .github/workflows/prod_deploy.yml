@@ -36,3 +36,5 @@ jobs:
           port: 22
           uploads: |
             ./dist/ => ./bot/
+            ./package.json => ./bot/
+            ./package-lock.json => ./bot/
