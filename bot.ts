@@ -103,7 +103,7 @@ bot.command("rankingtop10", async (ctx) => {
   const roundNumber = arg ? parseInt(arg, 10) : null;
 
   if (arg && (isNaN(roundNumber!) || roundNumber! <= 0)) {
-    await ctx.reply("O argumento deve ser um número de rodada válido. Ex: /rankingtop10 3", { parse_mode: "Markdown" });
+    await ctx.reply("O argumento deve ser um número de rodada válido. Ex: /rankingtop10 1", { parse_mode: "Markdown" });
     return;
   }
 
