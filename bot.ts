@@ -17,9 +17,9 @@ const apiRequest = new ApiService();
 // grammY will call the listeners when users send messages to your bot.
 
 // Handle the /start command.
-bot.command("start", (ctx) => ctx.reply("Welcome! Up and running."));
+bot.command("start", (ctx: any) => ctx.reply("Welcome! Up and running."));
 // Handle other messages.
-bot.command("proximas", async (ctx) => {
+bot.command("proximas", async (ctx: any) => {
   try {
     const response = await apiRequest.get<IMatch[]>(`match/next-matches`);
     if (response.length === 0) {
@@ -46,7 +46,7 @@ bot.command("proximas", async (ctx) => {
   }
 });
 
-bot.command("jacomecou", async (ctx) => {
+bot.command("jacomecou", async (ctx: any) => {
   const now = Math.floor(Date.now() / 1000);
   const diff = EDITION_START - now;
 
@@ -67,7 +67,7 @@ bot.command("jacomecou", async (ctx) => {
   });
 });
 
-bot.command("live", async (ctx) => {
+bot.command("live", async (ctx: any) => {
   try {
     const response = await apiRequest.get<IMatch[]>(`match/live-matches`);
     if (response.length === 0) {
@@ -98,7 +98,61 @@ bot.command("live", async (ctx) => {
   }
 });
 
-bot.command("rankingtop10", async (ctx) => {
+bot.command("rankinghpbr", async (ctx: any) => {
+  const arg = ctx.match.trim();
+  const roundNumber = arg ? parseInt(arg, 10) : null;
+
+  if (arg && (isNaN(roundNumber!) || roundNumber! <= 0)) {
+    await ctx.reply("O argumento deve ser um número de rodada válido. Ex: /rankinghpbr 1", { parse_mode: "Markdown" });
+    return;
+  }
+
+  try {
+    const response = await apiRequest.get<IRankingResponse>(`ranking/edition`);
+
+    let ranking;
+    let title;
+
+    if (roundNumber !== null) {
+      const roundData = response.round.find((r) => r.round === roundNumber);
+      if (!roundData) {
+        await ctx.reply(`Rodada *${roundNumber}* não encontrada.` + siteLink, { parse_mode: "Markdown" });
+        return;
+      }
+      ranking = roundData.ranking;
+      title = `🏆 *HPBR — Rodada ${roundNumber}*`;
+    } else {
+      ranking = response.edition;
+      title = `🏆 *HPBR — Geral*`;
+    }
+
+    if (ranking.length === 0) {
+      await ctx.reply("Não há dados de ranking disponíveis" + siteLink, { parse_mode: "Markdown" });
+      return;
+    }
+
+    const hpbrIds = [9, 17, 22, 25, 26, 29, 82, 199, 200, 201]; // Substitua pelos IDs reais dos participantes do HPBR
+
+    const lines = ranking
+      .filter((line) => hpbrIds.includes(line.user.id))
+      .map((line) => {
+        const { position, positionVariation, points, exacts } = line.accumulatedScore;
+        const name = line.user.nickname ?? line.user.name;
+        const trend = positionVariation > 0 ? "🔼" : positionVariation < 0 ? "🔽" : "➡️";
+        return `${position}. ${trend} *${name}* — ${points}pts _(${exacts} exatos)_`;
+      });
+
+    await ctx.reply(`${title}\n\n${lines.join("\n")}` + siteLink, { parse_mode: "Markdown" });
+  } catch (error: unknown) {
+    console.error("Error fetching ranking:", error);
+    await ctx.reply("Ocorreu um erro ao buscar o ranking. Por favor, tente novamente mais tarde." + siteLink, {
+      parse_mode: "Markdown",
+    });
+    return;
+  }
+});
+
+bot.command("rankingtop10", async (ctx: any) => {
   const arg = ctx.match.trim();
   const roundNumber = arg ? parseInt(arg, 10) : null;
 
@@ -122,7 +176,7 @@ bot.command("rankingtop10", async (ctx) => {
       ranking = roundData.ranking;
       title = `🏆 *Top 10 — Rodada ${roundNumber}*`;
     } else {
-      ranking = response.season;
+      ranking = response.edition;
       title = `🏆 *Top 10 — Geral*`;
     }
 
@@ -148,7 +202,7 @@ bot.command("rankingtop10", async (ctx) => {
   }
 });
 
-bot.command("cade", async (ctx) => {
+bot.command("cade", async (ctx: any) => {
   const query = ctx.match.trim().toLowerCase();
   if (!query) {
     await ctx.reply("Usage: /cade _nome ou apelido_", { parse_mode: "Markdown" });
@@ -158,7 +212,7 @@ bot.command("cade", async (ctx) => {
   try {
     const response = await apiRequest.get<IRankingResponse>(`ranking/edition`);
 
-    const found = response.season.find((line) => {
+    const found = response.edition.find((line) => {
       const name = (line.user.nickname ?? line.user.name).toLowerCase();
       return name.includes(query);
     });

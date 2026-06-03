@@ -10,8 +10,8 @@ export interface IRankingLine {
 
 export interface IRankingResponse {
   round: IRoundRanking[];
-  season: IRankingLine[];
-  seasonWithoutExtras: IRankingLine[];
+  edition: IRankingLine[];
+  editionWithoutExtras: IRankingLine[];
 }
 
 export interface IRankingScore {
