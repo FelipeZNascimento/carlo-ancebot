@@ -131,7 +131,7 @@ bot.command("rankinghpbr", async (ctx: any) => {
       return;
     }
 
-    const hpbrIds = [9, 17, 22, 25, 26, 28, 29, 30, 82, 199, 200, 201];
+    const hpbrIds = [9, 17, 22, 25, 26, 28, 29, 30, 63, 82, 199, 200, 201];
 
     const lines = ranking
       .filter((line) => hpbrIds.includes(line.user.id))
