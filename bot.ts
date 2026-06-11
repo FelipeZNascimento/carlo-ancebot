@@ -80,7 +80,7 @@ bot.command("live", async (ctx: any) => {
     const lines = response.map((match) => {
       const date = new Date(Number(match.timestamp) * 1000);
       const dateStr = date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-      return `🏟 ${match.homeTeam.name} x ${match.awayTeam.name}\n📅 ${dateStr}\n📍 ${match.stadium.name}, ${match.stadium.city} (Grupo ${match.group})`;
+      return `🏟 ${match.homeTeam.name} ${match.score.home} x ${match.score.away} ${match.awayTeam.name}\n📅 ${dateStr}\n📍 ${match.stadium.name}, ${match.stadium.city} (Grupo ${match.group})`;
     });
 
     await ctx.reply(lines.join("\n\n") + siteLink, {
@@ -94,6 +94,60 @@ bot.command("live", async (ctx: any) => {
         parse_mode: "Markdown",
       },
     );
+    return;
+  }
+});
+
+bot.command("rankingmbio", async (ctx: any) => {
+  const arg = ctx.match.trim();
+  const roundNumber = arg ? parseInt(arg, 10) : null;
+
+  if (arg && (isNaN(roundNumber!) || roundNumber! <= 0)) {
+    await ctx.reply("O argumento deve ser um número de rodada válido. Ex: /rankinghpbr 1", { parse_mode: "Markdown" });
+    return;
+  }
+
+  try {
+    const response = await apiRequest.get<IRankingResponse>(`ranking/edition`);
+
+    let ranking;
+    let title;
+
+    if (roundNumber !== null) {
+      const roundData = response.round.find((r) => r.round === roundNumber);
+      if (!roundData) {
+        await ctx.reply(`Rodada *${roundNumber}* não encontrada.` + siteLink, { parse_mode: "Markdown" });
+        return;
+      }
+      ranking = roundData.ranking;
+      title = `🏆 *MBIO — Rodada ${roundNumber}*`;
+    } else {
+      ranking = response.edition;
+      title = `🏆 *MBIO — Geral*`;
+    }
+
+    if (ranking.length === 0) {
+      await ctx.reply("Não há dados de ranking disponíveis" + siteLink, { parse_mode: "Markdown" });
+      return;
+    }
+
+    const hpbrIds = [9, 29, 196, 203, 204, 256, 261, 275];
+
+    const lines = ranking
+      .filter((line) => hpbrIds.includes(line.user.id))
+      .map((line) => {
+        const { position, positionVariation, points, exacts } = line.accumulatedScore;
+        const name = line.user.nickname ?? line.user.name;
+        const trend = positionVariation > 0 ? "🔼" : positionVariation < 0 ? "🔽" : "➡️";
+        return `${position}. ${trend} *${name}* — ${points}pts _(${exacts} exatos)_`;
+      });
+
+    await ctx.reply(`${title}\n\n${lines.join("\n")}` + siteLink, { parse_mode: "Markdown" });
+  } catch (error: unknown) {
+    console.error("Error fetching ranking:", error);
+    await ctx.reply("Ocorreu um erro ao buscar o ranking. Por favor, tente novamente mais tarde." + siteLink, {
+      parse_mode: "Markdown",
+    });
     return;
   }
 });
