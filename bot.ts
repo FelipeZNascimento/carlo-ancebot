@@ -13,6 +13,9 @@ if (!botToken) {
 const bot = new Bot(botToken);
 const siteLink = "\n\n🔗 [Bolão Copa](https://bolaocopa.omegafox.me/)";
 const apiRequest = new ApiService();
+const hpbrIds = [9, 17, 22, 25, 26, 28, 29, 30, 63, 82, 199, 200, 201, 238];
+const mbioIds = [9, 29, 196, 203, 204, 256, 261, 275];
+
 // You can now register listeners on your bot object `bot`.
 // grammY will call the listeners when users send messages to your bot.
 
@@ -103,7 +106,7 @@ bot.command("rankingmbio", async (ctx: any) => {
   const roundNumber = arg ? parseInt(arg, 10) : null;
 
   if (arg && (isNaN(roundNumber!) || roundNumber! <= 0)) {
-    await ctx.reply("O argumento deve ser um número de rodada válido. Ex: /rankinghpbr 1", { parse_mode: "Markdown" });
+    await ctx.reply("O argumento deve ser um número de rodada válido. Ex: /rankingmbio 1", { parse_mode: "Markdown" });
     return;
   }
 
@@ -131,10 +134,8 @@ bot.command("rankingmbio", async (ctx: any) => {
       return;
     }
 
-    const hpbrIds = [9, 29, 196, 203, 204, 256, 261, 275];
-
     const lines = ranking
-      .filter((line) => hpbrIds.includes(line.user.id))
+      .filter((line) => mbioIds.includes(line.user.id))
       .map((line) => {
         const { position, positionVariation, points, exacts } = line.accumulatedScore;
         const name = line.user.nickname ?? line.user.name;
@@ -185,8 +186,6 @@ bot.command("rankinghpbr", async (ctx: any) => {
       return;
     }
 
-    const hpbrIds = [9, 17, 22, 25, 26, 28, 29, 30, 63, 82, 199, 200, 201, 238];
-
     const lines = ranking
       .filter((line) => hpbrIds.includes(line.user.id))
       .map((line) => {
@@ -200,6 +199,80 @@ bot.command("rankinghpbr", async (ctx: any) => {
   } catch (error: unknown) {
     console.error("Error fetching ranking:", error);
     await ctx.reply("Ocorreu um erro ao buscar o ranking. Por favor, tente novamente mais tarde." + siteLink, {
+      parse_mode: "Markdown",
+    });
+    return;
+  }
+});
+
+bot.command("apostashpbr", async (ctx: any) => {
+  try {
+    const response = await apiRequest.get<IMatch[]>(`match/live-matches`);
+    if (response.length === 0) {
+      await ctx.reply("Não há partidas em andamento" + siteLink, {
+        parse_mode: "Markdown",
+      });
+      return;
+    }
+    const lines = response.map((match) => {
+      const date = new Date(Number(match.timestamp) * 1000);
+      const dateStr = date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+      const title = `🏟 ${match.homeTeam.name} ${match.score.home} x ${match.score.away} ${match.awayTeam.name}\n📅 ${dateStr}\n📍 ${match.stadium.name}, ${match.stadium.city} (Grupo ${match.group})\n\n`;
+
+      const lines = match.bets
+        .filter((b) => hpbrIds.includes(b.user.id))
+        .sort((a, b) => a.user.nickname.localeCompare(b.user.nickname))
+        .map((line) => {
+          const { user, scoreHome, scoreAway } = line;
+          return `${scoreHome} x ${scoreAway} | *${user.nickname}*`;
+        });
+
+      return title + lines.join("\n");
+    });
+
+    await ctx.reply(lines.join("\n\n"), {
+      parse_mode: "Markdown",
+    });
+  } catch (error: unknown) {
+    console.error("Error fetching ranking:", error);
+    await ctx.reply("Ocorreu um erro ao buscar live matches. Por favor, tente novamente mais tarde." + siteLink, {
+      parse_mode: "Markdown",
+    });
+    return;
+  }
+});
+
+bot.command("apostasmbio", async (ctx: any) => {
+  try {
+    const response = await apiRequest.get<IMatch[]>(`match/live-matches`);
+    if (response.length === 0) {
+      await ctx.reply("Não há partidas em andamento" + siteLink, {
+        parse_mode: "Markdown",
+      });
+      return;
+    }
+    const lines = response.map((match) => {
+      const date = new Date(Number(match.timestamp) * 1000);
+      const dateStr = date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+      const title = `🏟 ${match.homeTeam.name} ${match.score.home} x ${match.score.away} ${match.awayTeam.name}\n📅 ${dateStr}\n📍 ${match.stadium.name}, ${match.stadium.city} (Grupo ${match.group})\n\n`;
+
+      const lines = match.bets
+        .filter((b) => mbioIds.includes(b.user.id))
+        .sort((a, b) => a.user.nickname.localeCompare(b.user.nickname))
+        .map((line) => {
+          const { user, scoreHome, scoreAway } = line;
+          return `${scoreHome} x ${scoreAway} | *${user.nickname}*`;
+        });
+
+      return title + lines.join("\n");
+    });
+
+    await ctx.reply(lines.join("\n\n"), {
+      parse_mode: "Markdown",
+    });
+  } catch (error: unknown) {
+    console.error("Error fetching ranking:", error);
+    await ctx.reply("Ocorreu um erro ao buscar live matches. Por favor, tente novamente mais tarde." + siteLink, {
       parse_mode: "Markdown",
     });
     return;
