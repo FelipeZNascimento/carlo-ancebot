@@ -195,7 +195,7 @@ bot.command("rankinghpbr", async (ctx: any) => {
         return `${position}. ${trend} *${name}* — ${points}pts _(${exacts} exatos)_`;
       });
 
-    await ctx.reply(`${title}\n\n${lines.join("\n")}` + siteLink, { parse_mode: "Markdown" });
+    await ctx.reply(`${title}\n\n${lines.join("\n")}`, { parse_mode: "Markdown" });
   } catch (error: unknown) {
     console.error("Error fetching ranking:", error);
     await ctx.reply("Ocorreu um erro ao buscar o ranking. Por favor, tente novamente mais tarde." + siteLink, {
