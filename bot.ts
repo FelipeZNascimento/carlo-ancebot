@@ -111,44 +111,11 @@ bot.command("rankingmbio", async (ctx: any) => {
   }
 
   try {
-    const response = await apiRequest.get<IRankingResponse>(`ranking/edition`);
-
-    let ranking;
-    let title;
-
-    if (roundNumber !== null) {
-      const roundData = response.round.find((r) => r.round === roundNumber);
-      if (!roundData) {
-        await ctx.reply(`Rodada *${roundNumber}* não encontrada.` + siteLink, { parse_mode: "Markdown" });
-        return;
-      }
-      ranking = roundData.ranking;
-      title = `🏆 *MBIO — Rodada ${roundNumber}*`;
-    } else {
-      ranking = response.edition;
-      title = `🏆 *MBIO — Geral*`;
-    }
-
-    if (ranking.length === 0) {
-      await ctx.reply("Não há dados de ranking disponíveis" + siteLink, { parse_mode: "Markdown" });
-      return;
-    }
-
-    const lines = ranking
-      .filter((line) => mbioIds.includes(line.user.id))
-      .map((line) => {
-        const { position, positionVariation, points, exacts } = line.accumulatedScore;
-        const name = line.user.nickname ?? line.user.name;
-        const trend = positionVariation > 0 ? "🔼" : positionVariation < 0 ? "🔽" : "➡️";
-        return `${position}. ${trend} *${name}* — ${points}pts _(${exacts} exatos)_`;
-      });
-
-    await ctx.reply(`${title}\n\n${lines.join("\n")}` + siteLink, { parse_mode: "Markdown" });
+    const parsedRanking = await parseRanking(roundNumber, "MBIO", mbioIds);
+    await ctx.reply(parsedRanking, { parse_mode: "Markdown" });
   } catch (error: unknown) {
     console.error("Error fetching ranking:", error);
-    await ctx.reply("Ocorreu um erro ao buscar o ranking. Por favor, tente novamente mais tarde." + siteLink, {
-      parse_mode: "Markdown",
-    });
+    await ctx.reply("Ocorreu um erro ao buscar o ranking. Por favor, tente novamente mais tarde.");
     return;
   }
 });
@@ -163,76 +130,19 @@ bot.command("rankinghpbr", async (ctx: any) => {
   }
 
   try {
-    const response = await apiRequest.get<IRankingResponse>(`ranking/edition`);
-
-    let ranking;
-    let title;
-
-    if (roundNumber !== null) {
-      const roundData = response.round.find((r) => r.round === roundNumber);
-      if (!roundData) {
-        await ctx.reply(`Rodada *${roundNumber}* não encontrada.` + siteLink, { parse_mode: "Markdown" });
-        return;
-      }
-      ranking = roundData.ranking;
-      title = `🏆 *HPBR — Rodada ${roundNumber}*`;
-    } else {
-      ranking = response.edition;
-      title = `🏆 *HPBR — Geral*`;
-    }
-
-    if (ranking.length === 0) {
-      await ctx.reply("Não há dados de ranking disponíveis" + siteLink, { parse_mode: "Markdown" });
-      return;
-    }
-
-    const lines = ranking
-      .filter((line) => hpbrIds.includes(line.user.id))
-      .map((line) => {
-        const { position, positionVariation, points, exacts } = line.accumulatedScore;
-        const name = line.user.nickname ?? line.user.name;
-        const trend = positionVariation > 0 ? "🔼" : positionVariation < 0 ? "🔽" : "➡️";
-        return `${position}. ${trend} *${name}* — ${points}pts _(${exacts} exatos)_`;
-      });
-
-    await ctx.reply(`${title}\n\n${lines.join("\n")}`, { parse_mode: "Markdown" });
+    const parsedRanking = await parseRanking(roundNumber, "HPBR", hpbrIds);
+    await ctx.reply(parsedRanking, { parse_mode: "Markdown" });
   } catch (error: unknown) {
     console.error("Error fetching ranking:", error);
-    await ctx.reply("Ocorreu um erro ao buscar o ranking. Por favor, tente novamente mais tarde." + siteLink, {
-      parse_mode: "Markdown",
-    });
+    await ctx.reply("Ocorreu um erro ao buscar o ranking. Por favor, tente novamente mais tarde.");
     return;
   }
 });
 
 bot.command("apostashpbr", async (ctx: any) => {
   try {
-    const response = await apiRequest.get<IMatch[]>(`match/live-matches`);
-    if (response.length === 0) {
-      await ctx.reply("Não há partidas em andamento" + siteLink, {
-        parse_mode: "Markdown",
-      });
-      return;
-    }
-    const lines = response.map((match) => {
-      const date = new Date(Number(match.timestamp) * 1000);
-      const dateStr = date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-      const title = `🏟 ${match.homeTeam.name} ${match.score.home} x ${match.score.away} ${match.awayTeam.name}\n📅 ${dateStr}\n📍 ${match.stadium.name}, ${match.stadium.city} (Grupo ${match.group})\n\n`;
-
-      const lines = match.bets
-        .filter((b) => hpbrIds.includes(b.user.id))
-        .sort((a, b) => a.user.nickname.localeCompare(b.user.nickname))
-        .map((line) => {
-          const { user, scoreHome, scoreAway } = line;
-          return `${scoreHome} x ${scoreAway} | *${user.nickname}*`;
-        });
-
-      return title + lines.join("\n");
-    });
-
-    await ctx.reply(lines.join("\n\n"), {
-      parse_mode: "Markdown",
-    });
+    const response = await parseBets(hpbrIds);
+    await ctx.reply(response);
   } catch (error: unknown) {
     console.error("Error fetching ranking:", error);
     await ctx.reply("Ocorreu um erro ao buscar live matches. Por favor, tente novamente mais tarde." + siteLink, {
@@ -244,37 +154,11 @@ bot.command("apostashpbr", async (ctx: any) => {
 
 bot.command("apostasmbio", async (ctx: any) => {
   try {
-    const response = await apiRequest.get<IMatch[]>(`match/live-matches`);
-    if (response.length === 0) {
-      await ctx.reply("Não há partidas em andamento" + siteLink, {
-        parse_mode: "Markdown",
-      });
-      return;
-    }
-    const lines = response.map((match) => {
-      const date = new Date(Number(match.timestamp) * 1000);
-      const dateStr = date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-      const title = `🏟 ${match.homeTeam.name} ${match.score.home} x ${match.score.away} ${match.awayTeam.name}\n📅 ${dateStr}\n📍 ${match.stadium.name}, ${match.stadium.city} (Grupo ${match.group})\n\n`;
-
-      const lines = match.bets
-        .filter((b) => mbioIds.includes(b.user.id))
-        .sort((a, b) => a.user.nickname.localeCompare(b.user.nickname))
-        .map((line) => {
-          const { user, scoreHome, scoreAway } = line;
-          return `${scoreHome} x ${scoreAway} | *${user.nickname}*`;
-        });
-
-      return title + lines.join("\n");
-    });
-
-    await ctx.reply(lines.join("\n\n"), {
-      parse_mode: "Markdown",
-    });
+    const response = await parseBets(mbioIds);
+    await ctx.reply(response);
   } catch (error: unknown) {
     console.error("Error fetching ranking:", error);
-    await ctx.reply("Ocorreu um erro ao buscar live matches. Por favor, tente novamente mais tarde." + siteLink, {
-      parse_mode: "Markdown",
-    });
+    await ctx.reply("Ocorreu um erro ao buscar live matches. Por favor, tente novamente mais tarde.");
     return;
   }
 });
@@ -368,5 +252,61 @@ bot.command("cade", async (ctx: any) => {
   }
 });
 
+// FUNCTIONS
+async function parseBets(ids: number[]) {
+  const response = await apiRequest.get<IMatch[]>(`match/live-matches`);
+  if (response.length === 0) {
+    return "Não há partidas em andamento";
+  }
+  const lines = response.map((match) => {
+    const date = new Date(Number(match.timestamp) * 1000);
+    const dateStr = date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    const title = `🏟 ${match.homeTeam.name} ${match.score.home} x ${match.score.away} ${match.awayTeam.name}\n📅 ${dateStr}\n📍 ${match.stadium.name}, ${match.stadium.city} (Grupo ${match.group})\n\n`;
+
+    const matchBets = match.bets
+      .filter((b) => ids.includes(b.user.id))
+      .sort((a, b) => a.user.nickname.localeCompare(b.user.nickname))
+      .map((line) => {
+        const { user, scoreHome, scoreAway } = line;
+        return `${scoreHome} x ${scoreAway} | *${user.nickname}*`;
+      });
+
+    return title + matchBets.join("\n");
+  });
+
+  return lines.join("\n\n");
+}
+async function parseRanking(roundNumber: null | number, group: string, ids: number[]) {
+  const response = await apiRequest.get<IRankingResponse>(`ranking/edition`);
+  let ranking;
+  let title;
+
+  if (roundNumber !== null) {
+    const roundData = response.round.find((r) => r.round === roundNumber);
+    if (!roundData) {
+      return `Rodada *${roundNumber}* não encontrada.`;
+    }
+    ranking = roundData.ranking;
+    title = `🏆 *${group} — Rodada ${roundNumber}*`;
+  } else {
+    ranking = response.edition;
+    title = `🏆 *${group} — Geral*`;
+  }
+
+  if (ranking.length === 0) {
+    return "Não há dados de ranking disponíveis";
+  }
+
+  const lines = ranking
+    .filter((line) => ids.includes(line.user.id))
+    .map((line) => {
+      const { position, positionVariation, points, exacts } = line.accumulatedScore;
+      const name = line.user.nickname ?? line.user.name;
+      const trend = positionVariation > 0 ? "🔼" : positionVariation < 0 ? "🔽" : "➡️";
+      return `${position}. ${trend} *${name}* — ${points}pts _(${exacts} exatos)_`;
+    });
+
+  return `${title}\n\n${lines.join("\n")}`;
+}
 // Start the bot.
 bot.start();

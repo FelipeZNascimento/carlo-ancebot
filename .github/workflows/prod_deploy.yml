@@ -31,11 +31,11 @@ jobs:
         run: cp package.json package-lock.json dist/
 
       - name: 📂 Sync files to prod folder (NEW)
-        uses: Dylan700/sftp-upload-action@latest
+        uses: wangyucode/sftp-upload-action@v3
         with:
-          server: ${{ secrets.server }}
+          host: ${{ secrets.server }}
           username: ${{ secrets.username }}
           password: ${{secrets.password}}
+          localDir: "./dist/"
+          remoteDir: "./bot/"
           port: 22
-          uploads: |
-            ./dist/ => ./bot/
