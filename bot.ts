@@ -213,6 +213,46 @@ bot.command("rankingtop10", async (ctx: any) => {
   }
 });
 
+bot.command("cade", async (ctx: any) => {
+  const query = ctx.match.trim().toLowerCase();
+  if (!query) {
+    await ctx.reply("Usage: /cade _nome ou apelido_", { parse_mode: "Markdown" });
+    return;
+  }
+
+  try {
+    const response = await apiRequest.get<IRankingResponse>(`ranking/edition`);
+
+    const found = response.edition.find((line) => {
+      const name = (line.user.nickname ?? line.user.name).toLowerCase();
+      return name.includes(query);
+    });
+
+    if (!found) {
+      await ctx.reply(`Nenhum participante encontrado para *${ctx.match.trim()}*` + siteLink, {
+        parse_mode: "Markdown",
+      });
+      return;
+    }
+
+    const { position, positionVariation, points, exacts, percentage } = found.accumulatedScore;
+    const name = found.user.nickname ?? found.user.name;
+    const trend = positionVariation > 0 ? "🔼" : positionVariation < 0 ? "🔽" : "➡️";
+
+    await ctx.reply(
+      `👤 *${name}*\n📊 ${position}º lugar ${trend}\n🏅 ${points}pts — ${exacts} exatos — ${percentage}%` + siteLink,
+      { parse_mode: "Markdown" },
+    );
+  } catch (error: unknown) {
+    console.error("Error fetching ranking:", error);
+    await ctx.reply("Ocorreu um erro ao buscar o ranking. Por favor, tente novamente mais tarde." + siteLink, {
+      parse_mode: "Markdown",
+    });
+    return;
+  }
+});
+
+// FUNCTIONS
 async function parseBets(ids: number[]) {
   const response = await apiRequest.get<IMatch[]>(`match/live-matches`);
   if (response.length === 0) {
@@ -268,45 +308,5 @@ async function parseRanking(roundNumber: null | number, group: string, ids: numb
 
   return `${title}\n\n${lines.join("\n")}`;
 }
-
-bot.command("cade", async (ctx: any) => {
-  const query = ctx.match.trim().toLowerCase();
-  if (!query) {
-    await ctx.reply("Usage: /cade _nome ou apelido_", { parse_mode: "Markdown" });
-    return;
-  }
-
-  try {
-    const response = await apiRequest.get<IRankingResponse>(`ranking/edition`);
-
-    const found = response.edition.find((line) => {
-      const name = (line.user.nickname ?? line.user.name).toLowerCase();
-      return name.includes(query);
-    });
-
-    if (!found) {
-      await ctx.reply(`Nenhum participante encontrado para *${ctx.match.trim()}*` + siteLink, {
-        parse_mode: "Markdown",
-      });
-      return;
-    }
-
-    const { position, positionVariation, points, exacts, percentage } = found.accumulatedScore;
-    const name = found.user.nickname ?? found.user.name;
-    const trend = positionVariation > 0 ? "🔼" : positionVariation < 0 ? "🔽" : "➡️";
-
-    await ctx.reply(
-      `👤 *${name}*\n📊 ${position}º lugar ${trend}\n🏅 ${points}pts — ${exacts} exatos — ${percentage}%` + siteLink,
-      { parse_mode: "Markdown" },
-    );
-  } catch (error: unknown) {
-    console.error("Error fetching ranking:", error);
-    await ctx.reply("Ocorreu um erro ao buscar o ranking. Por favor, tente novamente mais tarde." + siteLink, {
-      parse_mode: "Markdown",
-    });
-    return;
-  }
-});
-
 // Start the bot.
 bot.start();
