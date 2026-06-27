@@ -142,7 +142,7 @@ bot.command("rankinghpbr", async (ctx: any) => {
 bot.command("apostashpbr", async (ctx: any) => {
   try {
     const response = await parseBets(hpbrIds);
-    await ctx.reply(response);
+    await ctx.reply(response, { parse_mode: "Markdown" });
   } catch (error: unknown) {
     console.error("Error fetching ranking:", error);
     await ctx.reply("Ocorreu um erro ao buscar live matches. Por favor, tente novamente mais tarde." + siteLink, {
@@ -155,7 +155,7 @@ bot.command("apostashpbr", async (ctx: any) => {
 bot.command("apostasmbio", async (ctx: any) => {
   try {
     const response = await parseBets(mbioIds);
-    await ctx.reply(response);
+    await ctx.reply(response, { parse_mode: "Markdown" });
   } catch (error: unknown) {
     console.error("Error fetching ranking:", error);
     await ctx.reply("Ocorreu um erro ao buscar live matches. Por favor, tente novamente mais tarde.");
@@ -197,7 +197,7 @@ bot.command("rankingtop10", async (ctx: any) => {
     }
 
     const lines = ranking.slice(0, 10).map((line) => {
-      const { position, positionVariation, points, exacts } = line.accumulatedScore;
+      const { position, positionVariation, points, exacts } = line.score;
       const name = line.user.nickname ?? line.user.name;
       const trend = positionVariation > 0 ? "🔼" : positionVariation < 0 ? "🔽" : "➡️";
       return `${position}. ${trend} *${name}* — ${points}pts _(${exacts} exatos)_`;
@@ -235,7 +235,7 @@ bot.command("cade", async (ctx: any) => {
       return;
     }
 
-    const { position, positionVariation, points, exacts, percentage } = found.accumulatedScore;
+    const { position, positionVariation, points, exacts, percentage } = found.score;
     const name = found.user.nickname ?? found.user.name;
     const trend = positionVariation > 0 ? "🔼" : positionVariation < 0 ? "🔽" : "➡️";
 
@@ -300,7 +300,7 @@ async function parseRanking(roundNumber: null | number, group: string, ids: numb
   const lines = ranking
     .filter((line) => ids.includes(line.user.id))
     .map((line) => {
-      const { position, positionVariation, points, exacts } = line.accumulatedScore;
+      const { position, positionVariation, points, exacts } = line.score;
       const name = line.user.nickname ?? line.user.name;
       const trend = positionVariation > 0 ? "🔼" : positionVariation < 0 ? "🔽" : "➡️";
       return `${position}. ${trend} *${name}* — ${points}pts _(${exacts} exatos)_`;
